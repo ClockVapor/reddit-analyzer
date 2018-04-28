@@ -1,0 +1,12 @@
+target/
+out/
+
+/.idea/dbnavigator.xml
+/.idea/uiDesigner.xml
+/.idea/workspace.xml
+/.idea/libraries/
+/.idea/dictionaries/
+*.iml
+
+/config.yml
+/out.json
