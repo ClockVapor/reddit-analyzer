@@ -28,7 +28,8 @@ object Scraper {
         val networkAdapter = OkHttpNetworkAdapter(userAgent)
         val credentials = Credentials.userless(config[ID].toString(), config[SECRET].toString(), UUID.randomUUID())
         val reddit = OAuthHelper.automatic(networkAdapter, credentials)
-        val stuff = Stuff()
+        val json = ObjectMapper()
+        val stuff = Stuff.read(options.file, json) ?: Stuff()
 
         for (subreddit in options.subreddits) {
             val paginator = reddit.subreddit(subreddit).comments().limit(options.limit).build()
@@ -37,7 +38,6 @@ object Scraper {
             }
         }
 
-        val json = ObjectMapper()
         stuff.write(options.file, json)
     }
 
