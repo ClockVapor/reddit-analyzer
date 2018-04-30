@@ -1,5 +1,14 @@
 package clockvapor.redditanalyzer.scraper
 
-typealias SubredditData = MutableMap<String, MutableMap<String, Int>>
+import clockvapor.redditanalyzer.common.Stuff
+import net.dean.jraw.models.Comment
 
-fun subredditData(): SubredditData = mutableMapOf()
+fun Stuff.add(subreddit: String, comments: Iterable<Comment>) {
+    val subredditMap = data.getOrPut(subreddit.toLowerCase(), ::mutableMapOf)
+    for (comment in comments) {
+        if (ids.add(comment.id)) {
+            val wordMap = comment.body.getRedditCommentWordMap()
+            StringUtils.addToWordMap(subredditMap, wordMap)
+        }
+    }
+}

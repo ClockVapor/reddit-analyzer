@@ -17,6 +17,7 @@
     </properties>
 
     <modules>
+        <module>common</module>
         <module>scraper</module>
         <module>analyzer</module>
     </modules>

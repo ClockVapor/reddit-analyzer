@@ -20,7 +20,8 @@ object StringUtils {
     }
 }
 
-fun String.getWordMap() = getWordMap(split(StringUtils.whitespaceRegex))
+fun String.getWordMap() = getWordMap(
+    split(StringUtils.whitespaceRegex))
 
 fun String.getRedditCommentWordMap() = getWordMap(splitRedditCommentIntoWords())
 

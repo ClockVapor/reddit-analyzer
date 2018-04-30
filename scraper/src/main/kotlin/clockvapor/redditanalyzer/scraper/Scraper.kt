@@ -1,5 +1,6 @@
 package clockvapor.redditanalyzer.scraper
 
+import clockvapor.redditanalyzer.common.Stuff
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.xenomachina.argparser.ArgParser
@@ -19,7 +20,7 @@ object Scraper {
 
     @JvmStatic
     fun main(args: Array<String>) = mainBody {
-        val options = ArgParser(args).parseInto(::Options)
+        val options = ArgParser(args).parseInto(Scraper::Options)
         val yaml = ObjectMapper(YAMLFactory())
         val config = yaml.readValue<Map<*, *>>(File(CONFIG_FILE_PATH), Map::class.java)
         validateConfig(config)
@@ -42,7 +43,9 @@ object Scraper {
     }
 
     private fun validateConfig(config: Map<*, *>) {
-        for (key in listOf(ID, SECRET, USERNAME)) {
+        for (key in listOf(ID,
+            SECRET,
+            USERNAME)) {
             if (!config.containsKey(key)) {
                 throw RuntimeException("config file missing \"$key\" entry")
             }
@@ -50,9 +53,7 @@ object Scraper {
     }
 
     private class Options(parser: ArgParser) {
-        val file by parser.storing("-d", "--data", help = "path to data file") {
-            File(this)
-        }
+        val file by parser.storing("-d", "--data", help = "path to data file") { File(this) }
         val limit by parser.storing("-l", "--limit", help = "number of comments to fetch per subreddit") {
             this.toInt()
         }

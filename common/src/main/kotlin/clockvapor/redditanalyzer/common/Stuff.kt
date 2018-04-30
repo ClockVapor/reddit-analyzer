@@ -1,23 +1,12 @@
-package clockvapor.redditanalyzer.scraper
+package clockvapor.redditanalyzer.common
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import net.dean.jraw.models.Comment
 import java.io.File
 import java.io.IOException
 
 class Stuff {
     var data: SubredditData = subredditData()
     var ids: MutableSet<String> = mutableSetOf()
-
-    fun add(subreddit: String, comments: Iterable<Comment>) {
-        val subredditMap = data.getOrPut(subreddit.toLowerCase(), ::mutableMapOf)
-        for (comment in comments) {
-            if (ids.add(comment.id)) {
-                val wordMap = comment.body.getRedditCommentWordMap()
-                StringUtils.addToWordMap(subredditMap, wordMap)
-            }
-        }
-    }
 
     fun write(file: File, mapper: ObjectMapper) {
         data = sort(data)
