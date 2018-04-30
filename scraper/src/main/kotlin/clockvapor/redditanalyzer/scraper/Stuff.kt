@@ -13,8 +13,8 @@ class Stuff {
         val subredditMap = data.getOrPut(subreddit.toLowerCase(), ::mutableMapOf)
         for (comment in comments) {
             if (ids.add(comment.id)) {
-                val wordMap = comment.body.getWordMap()
-                addToWordMap(subredditMap, wordMap)
+                val wordMap = comment.body.getRedditCommentWordMap()
+                StringUtils.addToWordMap(subredditMap, wordMap)
             }
         }
     }
@@ -53,7 +53,7 @@ class Stuff {
             for (data in arrayOf(a, b)) {
                 for ((subreddit, wordMap) in data) {
                     val subredditMap = result.getOrPut(subreddit, ::mutableMapOf)
-                    addToWordMap(subredditMap, wordMap)
+                    StringUtils.addToWordMap(subredditMap, wordMap)
                 }
             }
             return result
@@ -75,15 +75,6 @@ class Stuff {
                 }).toMap().toMutableMap()
             }
             return data.toList().sortedBy { it.first }.toMap().toMutableMap()
-        }
-
-        /**
-         * Adds word counts from [other] into [base].
-         */
-        private fun addToWordMap(base: MutableMap<String, Int>, other: Map<String, Int>) {
-            for ((word, count) in other) {
-                base.compute(word) { _, c -> c?.plus(count) ?: count }
-            }
         }
     }
 }
