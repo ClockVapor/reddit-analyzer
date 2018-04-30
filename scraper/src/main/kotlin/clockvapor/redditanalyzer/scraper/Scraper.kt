@@ -32,8 +32,9 @@ object Scraper {
 
         for (subreddit in options.subreddits) {
             val paginator = reddit.subreddit(subreddit).comments().limit(options.limit).build()
-            val comments = paginator.accumulateMerged(1)
-            stuff.add(subreddit, comments)
+            for (listing in paginator) {
+                stuff.add(subreddit, listing.children)
+            }
         }
 
         val json = ObjectMapper()
