@@ -7,15 +7,14 @@ import java.io.IOException
 
 class Stuff {
     var data: SubredditData = subredditData()
-    var ids: Set<String> = setOf()
+    var ids: MutableSet<String> = mutableSetOf()
 
     fun add(subreddit: String, comments: Iterable<Comment>) {
         val subredditMap = data.getOrPut(subreddit.toLowerCase(), ::mutableMapOf)
         for (comment in comments) {
-            if (comment.id !in ids) {
+            if (ids.add(comment.id)) {
                 val wordMap = comment.body.getRedditCommentWordMap()
                 StringUtils.addToWordMap(subredditMap, wordMap)
-                ids += comment.id
             }
         }
     }
