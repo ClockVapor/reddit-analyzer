@@ -42,10 +42,10 @@ object Scraper {
     }
 
     private fun validateConfig(config: Map<*, *>) {
-        when {
-            !config.containsKey(ID) -> throw RuntimeException("config file missing \"$ID\" entry")
-            !config.containsKey(SECRET) -> throw RuntimeException("config file missing \"$SECRET\" entry")
-            !config.containsKey(USERNAME) -> throw RuntimeException("config file missing \"$USERNAME\" entry")
+        for (key in listOf(ID, SECRET, USERNAME)) {
+            if (!config.containsKey(key)) {
+                throw RuntimeException("config file missing \"$key\" entry")
+            }
         }
     }
 
