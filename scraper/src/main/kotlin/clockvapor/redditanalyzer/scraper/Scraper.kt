@@ -15,14 +15,16 @@ object Scraper {
     private const val CONFIG_FILE_PATH = "config.yml"
     private const val ID = "id"
     private const val SECRET = "secret"
+    private const val USERNAME = "username"
 
     @JvmStatic
     fun main(args: Array<String>) = mainBody {
         val options = ArgParser(args).parseInto(::Options)
         val yaml = ObjectMapper(YAMLFactory())
         val config = yaml.readValue<Map<*, *>>(File(CONFIG_FILE_PATH), Map::class.java)
+        validateConfig(config)
         val userAgent =
-            UserAgent(System.getProperty("os.name"), "clockvapor.redditanalyzer", "1.0", "ClockVapor")
+            UserAgent(System.getProperty("os.name"), "clockvapor.redditanalyzer", "1.0", config[USERNAME].toString())
         val networkAdapter = OkHttpNetworkAdapter(userAgent)
         val credentials = Credentials.userless(config[ID].toString(), config[SECRET].toString(), UUID.randomUUID())
         val reddit = OAuthHelper.automatic(networkAdapter, credentials)
@@ -36,6 +38,14 @@ object Scraper {
 
         val json = ObjectMapper()
         stuff.write(options.file, json)
+    }
+
+    private fun validateConfig(config: Map<*, *>) {
+        when {
+            !config.containsKey(ID) -> throw RuntimeException("config file missing \"$ID\" entry")
+            !config.containsKey(SECRET) -> throw RuntimeException("config file missing \"$SECRET\" entry")
+            !config.containsKey(USERNAME) -> throw RuntimeException("config file missing \"$USERNAME\" entry")
+        }
     }
 
     private class Options(parser: ArgParser) {

@@ -27,9 +27,6 @@ class Stuff {
     }
 
     companion object {
-        private val whitespaceRegex = Regex("\\s+")
-        private val punctuationRegex = Regex("[.,!?:;\"*^\\-=+()\\[\\]<>]")
-
         @Suppress("UNCHECKED_CAST")
         fun read(file: File, mapper: ObjectMapper): Stuff? = try {
             mapper.readValue<Stuff>(file, Stuff::class.java)
@@ -88,18 +85,5 @@ class Stuff {
                 base.compute(word) { _, c -> c?.plus(count) ?: count }
             }
         }
-
-        private fun String.getWordMap(): Map<String, Int> {
-            val words = splitIntoWords()
-            val map = hashMapOf<String, Int>()
-            for (word in words) {
-                map.compute(word) { _, count -> count?.plus(1) ?: 1 }
-            }
-            return map
-        }
-
-        // TODO: remove markdown stuff like links, tables, and other formatting
-        private fun String.splitIntoWords(): List<String> =
-            replace(punctuationRegex, " ").toLowerCase().trim().split(whitespaceRegex)
     }
 }
