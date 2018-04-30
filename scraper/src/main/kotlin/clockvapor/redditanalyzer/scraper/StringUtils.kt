@@ -2,7 +2,7 @@ package clockvapor.redditanalyzer.scraper
 
 object StringUtils {
     val whitespaceRegex = Regex("\\s+")
-    val punctuationRegex = Regex("[`~!@#$%^&*()-_=+\\[],<.>/?\\\\\\|]")
+    val punctuationRegex = Regex("[`~!@#$%^&*()\\-_=+\\[\\],<.>/?\\\\|;:\"]")
 
     fun mergeWordMaps(a: Map<String, Int>, b: Map<String, Int>): MutableMap<String, Int> {
         val result = mutableMapOf<String, Int>()
@@ -32,7 +32,9 @@ fun getWordMap(words: Iterable<String>): Map<String, Int> {
 
 // TODO: strip contents out of tables, then strip link text out of links, then remove punctuation
 fun String.splitRedditCommentIntoWords(): List<String> =
-    stripLinks().replace(StringUtils.punctuationRegex, " ").toLowerCase().trim().split(StringUtils.whitespaceRegex)
+    stripLinks().replace('’', '\'').replace('‘', '\'').replace('”', '"').replace('“', '"')
+        .replace(StringUtils.punctuationRegex, " ")
+        .toLowerCase().trim().split(StringUtils.whitespaceRegex)
 
 fun String.stripLinks(): String {
     var startI = 0
