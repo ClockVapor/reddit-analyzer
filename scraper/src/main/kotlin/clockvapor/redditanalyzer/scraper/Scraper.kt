@@ -53,15 +53,15 @@ object Scraper {
                         for (reply in rootNode.replies) {
                             stuff.add(subreddit, reply.subject, options.mode)
                         }
-                        println("${numSubmissions++} submissions processed")
+                        println("${++numSubmissions} submissions processed in /r/$subreddit")
                         if (numSubmissions >= options.submissionLimit) break@listing
                     }
                 }
             } catch (e: Exception) {
                 System.err.println("exception thrown while fetching submissions in /r/$subreddit:")
                 e.printStackTrace()
-                continue
             }
+            println("finished with /r/$subreddit")
         }
 
         stuff.write(options.file, json)

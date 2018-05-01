@@ -1,6 +1,8 @@
 package clockvapor.redditanalyzer.analyzer
 
 import clockvapor.redditanalyzer.common.Stuff
+import clockvapor.redditanalyzer.common.checkedPlus
+import clockvapor.redditanalyzer.common.checkedSum
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.mainBody
@@ -16,7 +18,9 @@ object Analyzer {
         val options = ArgParser(args).parseInto(::Options)
         val json = ObjectMapper()
         val stuff = Stuff.read(options.inFile, json)
-        globalAllWordCount = stuff.data.values.fold(0) { count, wordMap -> count + wordMap.values.sum() }
+        globalAllWordCount = stuff.data.values.fold(0) { count, wordMap ->
+            count.checkedPlus(wordMap.values.checkedSum())
+        }
         val scores = stuff.calculateScores(options.weightExponent, options.limit)
         json.writeValue(options.outFile, scores)
     }
@@ -29,7 +33,7 @@ object Analyzer {
                 resultSubredditMap[word] = score(subreddit, word, weightExponent)
             }
         }
-        result = result.toList().sortedByDescending { (subreddit, _) -> subredditAllWordCountMap[subreddit] ?: 0 }
+        result = result.toList().sortedBy { (subreddit, _) -> subreddit }
             .toMap().toMutableMap()
         for (subreddit in result.keys) {
             result.computeIfPresent(subreddit) { _, wordMap ->
@@ -49,9 +53,11 @@ object Analyzer {
     private fun Stuff.score(subreddit: String, word: String, weightExponent: Double): Double {
         val subredditWordMap = data[subreddit]!!
         val subredditWordCount = subredditWordMap[word]!!
-        val subredditAllWordCount = subredditAllWordCountMap.getOrPut(subreddit) { subredditWordMap.values.sum() }
+        val subredditAllWordCount = subredditAllWordCountMap.getOrPut(subreddit) {
+            subredditWordMap.values.checkedSum()
+        }
         val globalWordCount = globalWordCountMap.getOrPut(word) {
-            data.values.fold(0) { count, wordMap -> count + (wordMap[word] ?: 0) }
+            data.values.fold(0) { count, wordMap -> count.checkedPlus(wordMap[word] ?: 0) }
         }
         return (Math.pow(subredditWordCount.toDouble(), weightExponent) / globalWordCount.toDouble()) *
             (globalAllWordCount!! / subredditAllWordCount.toDouble())

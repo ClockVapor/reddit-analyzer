@@ -1,10 +1,13 @@
 package clockvapor.redditanalyzer.scraper
 
+import clockvapor.redditanalyzer.common.checkedPlus
+
 object StringUtils {
-    val whitespaceRegex = Regex("\\s+")
-    val punctuationRegex = Regex("[`~!@#$%^&*()\\-_=+\\[\\],<.>/?\\\\|;:\"]")
+    val whitespaceRegex = Regex("[\\s\\p{Z}]+")
+    val punctuationRegex = Regex("[`~!@#$%^&*()\\-_=+\\[\\],<.>/?\\\\|;:\"\\p{P}]")
     val subredditLinkRegex = Regex("/?r/\\w+")
     val userLinkRegex = Regex("/?u/\\w+")
+    val numberWithCommasRegex = Regex("(?:\\d+,)+\\d+")
 
     fun mergeWordMaps(a: Map<String, Int>, b: Map<String, Int>): MutableMap<String, Int> {
         val result = mutableMapOf<String, Int>()
@@ -15,37 +18,43 @@ object StringUtils {
 
     fun addToWordMap(base: MutableMap<String, Int>, other: Map<String, Int>) {
         for ((word, count) in other) {
-            base.compute(word) { _, c -> c?.plus(count) ?: count }
+            base.compute(word) { _, c -> c?.checkedPlus(count) ?: count }
         }
+    }
+
+    fun getWordMap(words: Iterable<String>, mode: Scraper.Mode = Scraper.Mode.DEFAULT): Map<String, Int> {
+        val map = hashMapOf<String, Int>()
+        if (mode == Scraper.Mode.DEFAULT) {
+            for (word in words) {
+                map.compute(word) { _, count -> count?.checkedPlus(1) ?: 1 }
+            }
+        } else if (mode == Scraper.Mode.COMMENT) {
+            for (word in words) {
+                map.computeIfAbsent(word) { 1 }
+            }
+        }
+        return map
     }
 }
 
-fun String.getWordMap() = getWordMap(split(StringUtils.whitespaceRegex))
+fun String.getWordMap() = StringUtils.getWordMap(split(StringUtils.whitespaceRegex))
 
-fun String.getRedditCommentWordMap(mode: Scraper.Mode) = getWordMap(splitRedditCommentIntoWords(), mode)
+fun String.getRedditCommentWordMap(mode: Scraper.Mode) = StringUtils.getWordMap(splitRedditCommentIntoWords(), mode)
 
-fun getWordMap(words: Iterable<String>, mode: Scraper.Mode = Scraper.Mode.DEFAULT): Map<String, Int> {
-    val map = hashMapOf<String, Int>()
-    if (mode == Scraper.Mode.DEFAULT) {
-        for (word in words) {
-            map.compute(word) { _, count -> count?.plus(1) ?: 1 }
-        }
-    } else if (mode == Scraper.Mode.COMMENT) {
-        for (word in words) {
-            map.computeIfAbsent(word) { 1 }
-        }
-    }
-    return map
-}
-
-fun String.splitRedditCommentIntoWords(): List<String> =
-    stripLinks().replace('’', '\'').replace('‘', '\'').replace('”', '"').replace('“', '"').replace("&nbsp", "")
-        .replace(StringUtils.punctuationRegex, " ")
-        .replace(StringUtils.subredditLinkRegex, " ")
-        .replace(StringUtils.userLinkRegex, " ")
-        .toLowerCase().trim().split(StringUtils.whitespaceRegex) +
-        StringUtils.subredditLinkRegex.findAll(this).map { it.value.toLowerCase() } +
-        StringUtils.userLinkRegex.findAll(this).map { it.value.toLowerCase() }
+// TODO: remove urls
+// TODO: r/sub and /r/sub should be the same thing. same with u/person and /u/person
+// TODO: optimize this so we aren't doing regex matches twice for /r/, /u/, etc
+// TODO: pick up words like "A E S T H E T I C" (usually all caps)
+fun String.splitRedditCommentIntoWords(): List<String> = stripLinks()
+    .replace("&nbsp", "")
+    .replace(StringUtils.subredditLinkRegex, " ")
+    .replace(StringUtils.userLinkRegex, " ")
+    .replace(StringUtils.numberWithCommasRegex, " ")
+    .replace(StringUtils.punctuationRegex, " ")
+    .toLowerCase().trim().split(StringUtils.whitespaceRegex) +
+    StringUtils.subredditLinkRegex.findAll(this).map { it.value.toLowerCase() } +
+    StringUtils.userLinkRegex.findAll(this).map { it.value.toLowerCase() } +
+    StringUtils.numberWithCommasRegex.findAll(this).map { it.value }
 
 fun String.stripLinks(): String {
     var startI = 0
