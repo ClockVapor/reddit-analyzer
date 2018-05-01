@@ -89,7 +89,7 @@ object Scraper {
 
         val mode by parser.storing("-m", "--mode", help = "mode of operation (count, comment)") {
             Mode.valueOf(this.toUpperCase())
-        }.default(Mode.DEFAULT)
+        }.default(Mode.COUNT)
 
         val timePeriod by parser.storing("-p", "--period", help = "time period (all, year, month, week, day, hour)") {
             TimePeriod.valueOf(this.toUpperCase())
@@ -100,9 +100,9 @@ object Scraper {
 
     enum class Mode {
         /**
-         * DEFAULT mode counts words as many times as they appear in comments.
+         * COUNT mode counts words as many times as they appear in comments.
          */
-        DEFAULT,
+        COUNT,
 
         /**
          * COMMENT mode only counts each word one time per comment.
