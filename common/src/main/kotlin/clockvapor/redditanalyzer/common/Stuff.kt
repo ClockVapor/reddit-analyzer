@@ -15,11 +15,14 @@ class Stuff {
 
     companion object {
         @Suppress("UNCHECKED_CAST")
-        fun read(file: File, mapper: ObjectMapper): Stuff? = try {
-            mapper.readValue<Stuff>(file, Stuff::class.java)
+        fun readSafe(file: File, mapper: ObjectMapper): Stuff? = try {
+            read(file, mapper)
         } catch (e: IOException) {
             null
         }
+
+        @Suppress("UNCHECKED_CAST")
+        fun read(file: File, mapper: ObjectMapper): Stuff = mapper.readValue<Stuff>(file, Stuff::class.java)
 
         /**
          * Returns a sorted version of the given data map, such that subreddits are sorted alphabetically, and words

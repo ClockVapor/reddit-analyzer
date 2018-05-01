@@ -7,10 +7,16 @@ import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.mainBody
 import net.dean.jraw.http.OkHttpNetworkAdapter
 import net.dean.jraw.http.UserAgent
+import net.dean.jraw.models.CommentSort
+import net.dean.jraw.models.SubredditSort
+import net.dean.jraw.models.TimePeriod
 import net.dean.jraw.oauth.Credentials
 import net.dean.jraw.oauth.OAuthHelper
+import net.dean.jraw.pagination.Paginator
+import net.dean.jraw.references.CommentsRequest
 import java.io.File
 import java.util.*
+import kotlin.math.min
 
 object Scraper {
     private const val CONFIG_FILE_PATH = "config.yml"
@@ -30,12 +36,30 @@ object Scraper {
         val credentials = Credentials.userless(config[ID].toString(), config[SECRET].toString(), UUID.randomUUID())
         val reddit = OAuthHelper.automatic(networkAdapter, credentials)
         val json = ObjectMapper()
-        val stuff = Stuff.read(options.file, json) ?: Stuff()
+        val stuff = Stuff.readSafe(options.file, json) ?: Stuff()
 
         for (subreddit in options.subreddits) {
-            val paginator = reddit.subreddit(subreddit).comments().limit(options.limit).build()
-            for (listing in paginator) {
-                stuff.add(subreddit, listing.children)
+            val submissionsPerPage = min(options.submissionLimit, Paginator.DEFAULT_LIMIT)
+            val paginator = reddit.subreddit(subreddit).posts().sorting(SubredditSort.TOP)
+                .timePeriod(TimePeriod.ALL).limit(submissionsPerPage).build()
+            var numSubmissions = 0
+            try {
+                listing@ for (listing in paginator) {
+                    for (submission in listing) {
+                        val rootNode = reddit.submission(submission.id).comments(
+                            CommentsRequest(sort = CommentSort.TOP, limit = options.commentLimit, depth = 1))
+                        for (reply in rootNode.replies) {
+                            stuff.add(subreddit, reply.subject)
+                        }
+                        numSubmissions++
+                        println("$numSubmissions submissions processed")
+                        if (numSubmissions >= options.submissionLimit) break@listing
+                    }
+                }
+            } catch (e: Exception) {
+                System.err.println("exception thrown while fetching submissions in /r/$subreddit:")
+                e.printStackTrace()
+                continue
             }
         }
 
@@ -54,7 +78,10 @@ object Scraper {
 
     private class Options(parser: ArgParser) {
         val file by parser.storing("-d", "--data", help = "path to data file") { File(this) }
-        val limit by parser.storing("-l", "--limit", help = "number of comments to fetch per subreddit") {
+        val submissionLimit by parser.storing("-s", help = "number of top submissions to fetch per subreddit") {
+            this.toInt()
+        }
+        val commentLimit by parser.storing("-c", help = "number of top comments to fetch per submission") {
             this.toInt()
         }
         val subreddits by parser.positionalList("SUBREDDITS", "list of subreddits to scrape")
