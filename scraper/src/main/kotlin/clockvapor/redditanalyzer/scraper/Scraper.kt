@@ -5,7 +5,6 @@ import clockvapor.redditanalyzer.common.error
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.xenomachina.argparser.ArgParser
-import com.xenomachina.argparser.SystemExitException
 import com.xenomachina.argparser.default
 import com.xenomachina.argparser.mainBody
 import net.dean.jraw.http.OkHttpNetworkAdapter
@@ -27,16 +26,6 @@ object Scraper {
     private const val SECRET = "secret"
     private const val USERNAME = "username"
 
-    /**
-     * DEFAULT mode counts words as many times as they appear in comments.
-     */
-    const val DEFAULT = "default"
-
-    /**
-     * COMMENT mode only counts each word one time per comment.
-     */
-    const val COMMENT = "comment"
-
     @JvmStatic
     fun main(args: Array<String>) = mainBody {
         val options = ArgParser(args).parseInto(Scraper::Options)
@@ -54,7 +43,7 @@ object Scraper {
         for (subreddit in options.subreddits) {
             val submissionsPerPage = min(options.submissionLimit, Paginator.DEFAULT_LIMIT)
             val paginator = reddit.subreddit(subreddit).posts().sorting(SubredditSort.TOP)
-                .timePeriod(TimePeriod.ALL).limit(submissionsPerPage).build()
+                .timePeriod(options.timePeriod).limit(submissionsPerPage).build()
             var numSubmissions = 0
             try {
                 listing@ for (listing in paginator) {
@@ -89,18 +78,35 @@ object Scraper {
 
     private class Options(parser: ArgParser) {
         val file by parser.storing("-d", "--data", help = "path to data file") { File(this) }
+
         val submissionLimit by parser.storing("-s", help = "number of top submissions to fetch per subreddit") {
             this.toInt()
         }
+
         val commentLimit by parser.storing("-c", help = "number of top comments to fetch per submission") {
             this.toInt()
         }
+
+        val mode by parser.storing("-m", "--mode", help = "mode of operation (count, comment)") {
+            Mode.valueOf(this.toUpperCase())
+        }.default(Mode.DEFAULT)
+
+        val timePeriod by parser.storing("-p", "--period", help = "time period (all, year, month, week, day, hour)") {
+            TimePeriod.valueOf(this.toUpperCase())
+        }.default(TimePeriod.MONTH)
+
         val subreddits by parser.positionalList("SUBREDDITS", "list of subreddits to scrape")
-        val mode by parser.storing("-m", "--mode", help = "mode of operation (count, comment)").default(DEFAULT)
-            .addValidator {
-                if (value != DEFAULT && value != COMMENT) {
-                    throw SystemExitException("invalid mode: $value", 1)
-                }
-            }
+    }
+
+    enum class Mode {
+        /**
+         * DEFAULT mode counts words as many times as they appear in comments.
+         */
+        DEFAULT,
+
+        /**
+         * COMMENT mode only counts each word one time per comment.
+         */
+        COMMENT
     }
 }

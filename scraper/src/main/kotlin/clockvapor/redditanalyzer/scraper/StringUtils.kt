@@ -22,15 +22,15 @@ object StringUtils {
 
 fun String.getWordMap() = getWordMap(split(StringUtils.whitespaceRegex))
 
-fun String.getRedditCommentWordMap(mode: String) = getWordMap(splitRedditCommentIntoWords(), mode)
+fun String.getRedditCommentWordMap(mode: Scraper.Mode) = getWordMap(splitRedditCommentIntoWords(), mode)
 
-fun getWordMap(words: Iterable<String>, mode: String = Scraper.DEFAULT): Map<String, Int> {
+fun getWordMap(words: Iterable<String>, mode: Scraper.Mode = Scraper.Mode.DEFAULT): Map<String, Int> {
     val map = hashMapOf<String, Int>()
-    if (mode == Scraper.DEFAULT) {
+    if (mode == Scraper.Mode.DEFAULT) {
         for (word in words) {
             map.compute(word) { _, count -> count?.plus(1) ?: 1 }
         }
-    } else if (mode == Scraper.COMMENT) {
+    } else if (mode == Scraper.Mode.COMMENT) {
         for (word in words) {
             map.computeIfAbsent(word) { 1 }
         }
