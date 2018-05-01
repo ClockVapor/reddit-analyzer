@@ -101,7 +101,7 @@ fun String.stripLinks(): String {
             results += substring(startI, linkStartI) + ' ' + substring(linkStartI + 1, linkTextEndI) + ' '
             startI = linkEndI + 1
         } else {
-            results += substring(startI, i)
+            results += substring(startI, length)
             break@start
         }
     }
