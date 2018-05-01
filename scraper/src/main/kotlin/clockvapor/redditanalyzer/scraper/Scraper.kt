@@ -53,8 +53,7 @@ object Scraper {
                         for (reply in rootNode.replies) {
                             stuff.add(subreddit, reply.subject, options.mode)
                         }
-                        numSubmissions++
-                        println("$numSubmissions submissions processed")
+                        println("${numSubmissions++} submissions processed")
                         if (numSubmissions >= options.submissionLimit) break@listing
                     }
                 }
@@ -87,9 +86,9 @@ object Scraper {
             this.toInt()
         }
 
-        val mode by parser.storing("-m", "--mode", help = "mode of operation (count, comment)") {
+        val mode by parser.storing("-m", "--mode", help = "mode of operation (default, comment)") {
             Mode.valueOf(this.toUpperCase())
-        }.default(Mode.COUNT)
+        }.default(Mode.DEFAULT)
 
         val timePeriod by parser.storing("-p", "--period", help = "time period (all, year, month, week, day, hour)") {
             TimePeriod.valueOf(this.toUpperCase())
@@ -100,9 +99,9 @@ object Scraper {
 
     enum class Mode {
         /**
-         * COUNT mode counts words as many times as they appear in comments.
+         * DEFAULT mode counts words as many times as they appear in comments.
          */
-        COUNT,
+        DEFAULT,
 
         /**
          * COMMENT mode only counts each word one time per comment.

@@ -7,6 +7,3 @@ out/
 /.idea/libraries/
 /.idea/dictionaries/
 *.iml
-
-/*.yml
-/*.json

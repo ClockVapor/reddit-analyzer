@@ -24,9 +24,9 @@ fun String.getWordMap() = getWordMap(split(StringUtils.whitespaceRegex))
 
 fun String.getRedditCommentWordMap(mode: Scraper.Mode) = getWordMap(splitRedditCommentIntoWords(), mode)
 
-fun getWordMap(words: Iterable<String>, mode: Scraper.Mode = Scraper.Mode.COUNT): Map<String, Int> {
+fun getWordMap(words: Iterable<String>, mode: Scraper.Mode = Scraper.Mode.DEFAULT): Map<String, Int> {
     val map = hashMapOf<String, Int>()
-    if (mode == Scraper.Mode.COUNT) {
+    if (mode == Scraper.Mode.DEFAULT) {
         for (word in words) {
             map.compute(word) { _, count -> count?.plus(1) ?: 1 }
         }
