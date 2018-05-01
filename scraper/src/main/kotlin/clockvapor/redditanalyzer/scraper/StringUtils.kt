@@ -20,15 +20,20 @@ object StringUtils {
     }
 }
 
-fun String.getWordMap() = getWordMap(
-    split(StringUtils.whitespaceRegex))
+fun String.getWordMap() = getWordMap(split(StringUtils.whitespaceRegex))
 
-fun String.getRedditCommentWordMap() = getWordMap(splitRedditCommentIntoWords())
+fun String.getRedditCommentWordMap(mode: String) = getWordMap(splitRedditCommentIntoWords(), mode)
 
-fun getWordMap(words: Iterable<String>): Map<String, Int> {
+fun getWordMap(words: Iterable<String>, mode: String = Scraper.DEFAULT): Map<String, Int> {
     val map = hashMapOf<String, Int>()
-    for (word in words) {
-        map.compute(word) { _, count -> count?.plus(1) ?: 1 }
+    if (mode == Scraper.DEFAULT) {
+        for (word in words) {
+            map.compute(word) { _, count -> count?.plus(1) ?: 1 }
+        }
+    } else if (mode == Scraper.COMMENT) {
+        for (word in words) {
+            map.computeIfAbsent(word) { 1 }
+        }
     }
     return map
 }

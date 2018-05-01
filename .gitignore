@@ -8,6 +8,5 @@ out/
 /.idea/dictionaries/
 *.iml
 
-/config.yml
-/out.json
-/scores.json
+/*.yml
+/*.json

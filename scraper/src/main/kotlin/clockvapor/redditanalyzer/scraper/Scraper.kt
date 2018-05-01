@@ -1,9 +1,12 @@
 package clockvapor.redditanalyzer.scraper
 
 import clockvapor.redditanalyzer.common.Stuff
+import clockvapor.redditanalyzer.common.error
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.xenomachina.argparser.ArgParser
+import com.xenomachina.argparser.SystemExitException
+import com.xenomachina.argparser.default
 import com.xenomachina.argparser.mainBody
 import net.dean.jraw.http.OkHttpNetworkAdapter
 import net.dean.jraw.http.UserAgent
@@ -23,6 +26,16 @@ object Scraper {
     private const val ID = "id"
     private const val SECRET = "secret"
     private const val USERNAME = "username"
+
+    /**
+     * DEFAULT mode counts words as many times as they appear in comments.
+     */
+    const val DEFAULT = "default"
+
+    /**
+     * COMMENT mode only counts each word one time per comment.
+     */
+    const val COMMENT = "comment"
 
     @JvmStatic
     fun main(args: Array<String>) = mainBody {
@@ -49,7 +62,7 @@ object Scraper {
                         val rootNode = reddit.submission(submission.id).comments(
                             CommentsRequest(sort = CommentSort.TOP, limit = options.commentLimit, depth = 1))
                         for (reply in rootNode.replies) {
-                            stuff.add(subreddit, reply.subject)
+                            stuff.add(subreddit, reply.subject, options.mode)
                         }
                         numSubmissions++
                         println("$numSubmissions submissions processed")
@@ -67,11 +80,9 @@ object Scraper {
     }
 
     private fun validateConfig(config: Map<*, *>) {
-        for (key in listOf(ID,
-            SECRET,
-            USERNAME)) {
+        for (key in listOf(ID, SECRET, USERNAME)) {
             if (!config.containsKey(key)) {
-                throw RuntimeException("config file missing \"$key\" entry")
+                error("config file missing \"$key\" entry")
             }
         }
     }
@@ -85,5 +96,11 @@ object Scraper {
             this.toInt()
         }
         val subreddits by parser.positionalList("SUBREDDITS", "list of subreddits to scrape")
+        val mode by parser.storing("-m", "--mode", help = "mode of operation (count, comment)").default(DEFAULT)
+            .addValidator {
+                if (value != DEFAULT && value != COMMENT) {
+                    throw SystemExitException("invalid mode: $value", 1)
+                }
+            }
     }
 }
