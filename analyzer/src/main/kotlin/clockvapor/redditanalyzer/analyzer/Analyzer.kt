@@ -17,16 +17,16 @@ object Analyzer {
         val json = ObjectMapper()
         val stuff = Stuff.read(options.inFile, json)
         globalAllWordCount = stuff.data.values.fold(0) { count, wordMap -> count + wordMap.values.sum() }
-        val scores = stuff.calculateScores(limit = 10)
+        val scores = stuff.calculateScores(options.weightExponent, options.limit)
         json.writeValue(options.outFile, scores)
     }
 
-    private fun Stuff.calculateScores(limit: Int): Map<String, Map<String, Double>> {
+    private fun Stuff.calculateScores(weightExponent: Double, limit: Int): Map<String, Map<String, Double>> {
         var result = mutableMapOf<String, MutableMap<String, Double>>()
         for ((subreddit, wordMap) in data) {
             val resultSubredditMap = result.getOrPut(subreddit) { mutableMapOf() }
             for (word in wordMap.keys) {
-                resultSubredditMap[word] = score(subreddit, word)
+                resultSubredditMap[word] = score(subreddit, word, weightExponent)
             }
         }
         result = result.toList().sortedByDescending { (subreddit, _) -> subredditAllWordCountMap[subreddit] ?: 0 }
@@ -46,19 +46,21 @@ object Analyzer {
         return result
     }
 
-    private fun Stuff.score(subreddit: String, word: String): Double {
+    private fun Stuff.score(subreddit: String, word: String, weightExponent: Double): Double {
         val subredditWordMap = data[subreddit]!!
         val subredditWordCount = subredditWordMap[word]!!
         val subredditAllWordCount = subredditAllWordCountMap.getOrPut(subreddit) { subredditWordMap.values.sum() }
         val globalWordCount = globalWordCountMap.getOrPut(word) {
             data.values.fold(0) { count, wordMap -> count + (wordMap[word] ?: 0) }
         }
-        return (subredditWordCount * subredditWordCount / globalWordCount.toDouble()) *
+        return (Math.pow(subredditWordCount.toDouble(), weightExponent) / globalWordCount.toDouble()) *
             (globalAllWordCount!! / subredditAllWordCount.toDouble())
     }
 
     private class Options(parser: ArgParser) {
         val inFile by parser.storing("-d", "--data", help = "path to data file") { File(this) }
         val outFile by parser.storing("-o", "--output", help = "path to output file") { File(this) }
+        val limit by parser.storing("-l", "--limit", help = "number of top scorers per subreddit") { this.toInt() }
+        val weightExponent by parser.storing("-w", "--weight", help = "exponent weight") { this.toDouble() }
     }
 }

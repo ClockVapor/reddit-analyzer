@@ -34,13 +34,13 @@ fun getWordMap(words: Iterable<String>): Map<String, Int> {
 }
 
 fun String.splitRedditCommentIntoWords(): List<String> =
-    stripLinks().replace('’', '\'').replace('‘', '\'').replace('”', '"').replace('“', '"')
+    stripLinks().replace('’', '\'').replace('‘', '\'').replace('”', '"').replace('“', '"').replace("&nbsp", "")
         .replace(StringUtils.punctuationRegex, " ")
         .replace(StringUtils.subredditLinkRegex, " ")
         .replace(StringUtils.userLinkRegex, " ")
         .toLowerCase().trim().split(StringUtils.whitespaceRegex) +
-        StringUtils.subredditLinkRegex.findAll(this).map { it.value } +
-        StringUtils.userLinkRegex.findAll(this).map { it.value }
+        StringUtils.subredditLinkRegex.findAll(this).map { it.value.toLowerCase() } +
+        StringUtils.userLinkRegex.findAll(this).map { it.value.toLowerCase() }
 
 fun String.stripLinks(): String {
     var startI = 0
