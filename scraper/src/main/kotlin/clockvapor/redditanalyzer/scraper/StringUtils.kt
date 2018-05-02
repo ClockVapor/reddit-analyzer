@@ -4,10 +4,12 @@ import clockvapor.redditanalyzer.common.checkedPlus
 
 object StringUtils {
     val whitespaceRegex = Regex("[\\s\\p{Z}]+")
-    val punctuationRegex = Regex("[`~!@#$%^&*()\\-_=+\\[\\],<.>/?\\\\|;:\"\\p{P}]")
+    val punctuationRegex = Regex("[`~!@#$%^&*()\\-_=+\\[\\],<.>/?\\\\|;:\"]")
+    val dashRegex = Regex("\\p{Pd}")
     val subredditLinkRegex = Regex("/?r/\\w+")
     val userLinkRegex = Regex("/?u/\\w+")
     val numberWithCommasRegex = Regex("(?:\\d+,)+\\d+")
+    val urlRegex = Regex("[a-zA-Z]+://\\S+")
 
     fun mergeWordMaps(a: Map<String, Int>, b: Map<String, Int>): MutableMap<String, Int> {
         val result = mutableMapOf<String, Int>()
@@ -41,20 +43,22 @@ fun String.getWordMap() = StringUtils.getWordMap(split(StringUtils.whitespaceReg
 
 fun String.getRedditCommentWordMap(mode: Scraper.Mode) = StringUtils.getWordMap(splitRedditCommentIntoWords(), mode)
 
-// TODO: remove urls
-// TODO: r/sub and /r/sub should be the same thing. same with u/person and /u/person
-// TODO: optimize this so we aren't doing regex matches twice for /r/, /u/, etc
 // TODO: pick up words like "A E S T H E T I C" (usually all caps)
-fun String.splitRedditCommentIntoWords(): List<String> = stripLinks()
-    .replace("&nbsp", "")
-    .replace(StringUtils.subredditLinkRegex, " ")
-    .replace(StringUtils.userLinkRegex, " ")
-    .replace(StringUtils.numberWithCommasRegex, " ")
-    .replace(StringUtils.punctuationRegex, " ")
-    .toLowerCase().trim().split(StringUtils.whitespaceRegex) +
-    StringUtils.subredditLinkRegex.findAll(this).map { it.value.toLowerCase() } +
-    StringUtils.userLinkRegex.findAll(this).map { it.value.toLowerCase() } +
-    StringUtils.numberWithCommasRegex.findAll(this).map { it.value }
+fun String.splitRedditCommentIntoWords(): List<String> = (
+    stripLinks()
+        .replace(StringUtils.urlRegex, " ")
+        .replace("“", "\"").replace("”", "\"").replace("‘", "'").replace("’", "'")
+        .replace("&nbsp", "")
+        .replace(StringUtils.dashRegex, "-")
+        .replace(StringUtils.subredditLinkRegex, " ")
+        .replace(StringUtils.userLinkRegex, " ")
+        .replace(StringUtils.numberWithCommasRegex, " ")
+        .replace(StringUtils.punctuationRegex, " ")
+        .toLowerCase().trim().split(StringUtils.whitespaceRegex) +
+        StringUtils.subredditLinkRegex.findAll(this).map { it.value.toLowerCase().startingWith("/") } +
+        StringUtils.userLinkRegex.findAll(this).map { it.value.toLowerCase().startingWith("/") } +
+        StringUtils.numberWithCommasRegex.findAll(this).map { it.value }
+    ).toMutableList().filter(String::isNotBlank)
 
 fun String.stripLinks(): String {
     var startI = 0
@@ -121,3 +125,7 @@ fun String.stripLinks(): String {
     }
     return results.joinToString(separator = "").trim()
 }
+
+fun String.startingWith(prefix: String): String =
+    if (this.startsWith(prefix)) this
+    else "$prefix$this"

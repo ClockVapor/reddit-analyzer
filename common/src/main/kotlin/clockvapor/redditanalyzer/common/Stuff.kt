@@ -9,7 +9,6 @@ class Stuff {
     var ids: MutableSet<String> = mutableSetOf()
 
     fun write(file: File, mapper: ObjectMapper) {
-        data = sort(data)
         mapper.writeValue(file, this)
     }
 
@@ -28,7 +27,7 @@ class Stuff {
          * Returns a sorted version of the given data map, such that subreddits are sorted alphabetically, and words
          * are sorted by number of occurrences first and alphabetically second.
          */
-        private fun sort(data: SubredditData): SubredditData {
+        fun sort(data: SubredditData): SubredditData {
             data.replaceAll { _, wordMap ->
                 wordMap.toList().sortedWith(kotlin.Comparator { o1, o2 ->
                     val c = o2.second.compareTo(o1.second)

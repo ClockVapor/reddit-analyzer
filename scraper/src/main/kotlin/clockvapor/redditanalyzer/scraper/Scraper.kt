@@ -27,7 +27,7 @@ object Scraper {
     private const val USERNAME = "username"
 
     @JvmStatic
-    fun main(args: Array<String>) = mainBody {
+    fun main(args: Array<String>): Unit = mainBody {
         val options = ArgParser(args).parseInto(Scraper::Options)
         val yaml = ObjectMapper(YAMLFactory())
         val config = yaml.readValue<Map<*, *>>(File(CONFIG_FILE_PATH), Map::class.java)
@@ -64,7 +64,10 @@ object Scraper {
             println("finished with /r/$subreddit")
         }
 
-        stuff.write(options.file, json)
+        stuff.apply {
+            data = Stuff.sort(data)
+            write(options.file, json)
+        }
     }
 
     private fun validateConfig(config: Map<*, *>) {

@@ -18,11 +18,20 @@ object Analyzer {
         val options = ArgParser(args).parseInto(::Options)
         val json = ObjectMapper()
         val stuff = Stuff.read(options.inFile, json)
-        globalAllWordCount = stuff.data.values.fold(0) { count, wordMap ->
-            count.checkedPlus(wordMap.values.checkedSum())
-        }
+        calculateWordCounts(stuff)
         val scores = stuff.calculateScores(options.weightExponent, options.limit)
         json.writeValue(options.outFile, scores)
+        println(getMostDistinguishingWords(scores).joinToString("\n"))
+    }
+
+    private fun calculateWordCounts(stuff: Stuff) {
+        for ((subreddit, wordMap) in stuff.data) {
+            subredditAllWordCountMap[subreddit] = wordMap.values.checkedSum()
+            for ((word, count) in wordMap) {
+                globalWordCountMap.compute(word) { _, c -> c?.checkedPlus(count) ?: count }
+            }
+        }
+        globalAllWordCount = subredditAllWordCountMap.values.checkedSum()
     }
 
     private fun Stuff.calculateScores(weightExponent: Double, limit: Int): Map<String, Map<String, Double>> {
@@ -51,17 +60,17 @@ object Analyzer {
     }
 
     private fun Stuff.score(subreddit: String, word: String, weightExponent: Double): Double {
-        val subredditWordMap = data[subreddit]!!
-        val subredditWordCount = subredditWordMap[word]!!
-        val subredditAllWordCount = subredditAllWordCountMap.getOrPut(subreddit) {
-            subredditWordMap.values.checkedSum()
-        }
-        val globalWordCount = globalWordCountMap.getOrPut(word) {
-            data.values.fold(0) { count, wordMap -> count.checkedPlus(wordMap[word] ?: 0) }
-        }
-        return (Math.pow(subredditWordCount.toDouble(), weightExponent) / globalWordCount.toDouble()) *
+        val subredditWordCount = data[subreddit]!![word]!!
+        val subredditAllWordCount = subredditAllWordCountMap[subreddit]!!
+        val globalWordCount = globalWordCountMap[word]!!
+        return (Math.pow(subredditWordCount.toDouble(), weightExponent) / globalWordCount) *
             (globalAllWordCount!! / subredditAllWordCount.toDouble())
     }
+
+    private fun getMostDistinguishingWords(scores: Map<String, Map<String, Double>>) =
+        scores.flatMap { (subreddit, wordMap) ->
+            wordMap.map { (word, count) -> Triple(subreddit, word, count) }
+        }.sortedByDescending { (_, _, score) -> score }
 
     private class Options(parser: ArgParser) {
         val inFile by parser.storing("-d", "--data", help = "path to data file") { File(this) }

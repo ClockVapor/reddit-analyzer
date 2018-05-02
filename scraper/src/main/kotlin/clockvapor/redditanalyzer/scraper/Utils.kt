@@ -4,9 +4,9 @@ import clockvapor.redditanalyzer.common.Stuff
 import net.dean.jraw.models.Comment
 
 fun Stuff.add(subreddit: String, comment: Comment, mode: Scraper.Mode) {
-    val subredditMap = data.getOrPut(subreddit.toLowerCase(), ::mutableMapOf)
     if (ids.add(comment.id)) {
-        val wordMap = comment.body.getRedditCommentWordMap(mode)
+        val subredditMap = data.getOrPut(subreddit.toLowerCase(), ::mutableMapOf)
+        val wordMap = comment.body.getRedditCommentWordMap(mode).toMutableMap()
         StringUtils.addToWordMap(subredditMap, wordMap)
     }
 }

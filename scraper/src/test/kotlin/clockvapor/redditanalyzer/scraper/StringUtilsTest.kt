@@ -106,6 +106,16 @@ class StringUtilsTest {
     }
 
     @Test
+    fun testStripLinks17() {
+        val text = "my link"
+        val textWithLinks = "[not a link][$text](https://www.duckduckgo.com)"
+        Assert.assertEquals(
+            "[not a link] $text".getWordMap(),
+            textWithLinks.stripLinks().getWordMap()
+        )
+    }
+
+    @Test
     fun testStripLinksMultipleLinks() {
         val text = "my link"
         val text2 = "my other link"
@@ -117,20 +127,31 @@ class StringUtilsTest {
     }
 
     @Test
-    fun testStripLinksMultipleLinks2() {
-        val text = "my link"
-        val textWithLinks = "[not a link][$text](https://www.duckduckgo.com)"
-        Assert.assertEquals(
-            "[not a link] $text".getWordMap(),
-            textWithLinks.stripLinks().getWordMap()
-        )
+    fun testSplitsWords() {
+        val comment = "foo bar. hello, world!"
+        Assert.assertEquals(setOf("foo", "bar", "hello", "world"), comment.splitRedditCommentIntoWords().toSet())
     }
 
     @Test
-    fun testSplitRedditCommentIntoWords() {
+    fun testRetainEmojiAsPartOfWord() {
         // ni🅱️🅱️as
         val comment = "ni\uD83C\uDD71️\uD83C\uDD71️️as"
-        Assert.assertEquals(listOf(comment), comment.splitRedditCommentIntoWords())
+        Assert.assertEquals(setOf(comment), comment.splitRedditCommentIntoWords().toSet())
+    }
+
+    @Test
+    fun testRetainEmoji() {
+        val comment = "\uD83D\uDE02"
+        Assert.assertEquals(setOf(comment), comment.splitRedditCommentIntoWords().toSet())
+    }
+
+    @Test
+    fun testRetainEmoji2() {
+        val comment = "\uD83D\uDE02 \uD83D\uDE02"
+        Assert.assertEquals(
+            comment.split(StringUtils.whitespaceRegex).toSet(),
+            comment.splitRedditCommentIntoWords().toSet()
+        )
     }
 
     // maybe do this later if i add a word whitelist or something
@@ -141,13 +162,19 @@ class StringUtilsTest {
     }*/
 
     @Test
-    fun testSplitRedditCommentIntoWords3() {
+    fun testNewlinesSplitWords() {
         val comment = "test\n\nfoo"
-        Assert.assertEquals(listOf("test", "foo"), comment.splitRedditCommentIntoWords())
+        Assert.assertEquals(setOf("test", "foo"), comment.splitRedditCommentIntoWords().toSet())
     }
 
     @Test
-    fun testSplitRedditCommentIntoWords4() {
+    fun testReplacePunctuationWithSpaces() {
+        val comment = "hyphenated-word-thing"
+        Assert.assertEquals(setOf("hyphenated", "word", "thing"), comment.splitRedditCommentIntoWords().toSet())
+    }
+
+    @Test
+    fun testNumbersWithCommas() {
         val comment = "there were 123,456,789 of them"
         Assert.assertEquals(
             comment.split(StringUtils.whitespaceRegex).toSet(),
@@ -156,7 +183,7 @@ class StringUtilsTest {
     }
 
     @Test
-    fun testSplitRedditCommentIntoWords5() {
+    fun testNumbersWithCommas2() {
         val comment = "there were 123,456,789, of them"
         val comment2 = "there were 123,456,789 of them"
         Assert.assertEquals(
@@ -166,10 +193,64 @@ class StringUtilsTest {
     }
 
     @Test
-    fun testSplitRedditCommentIntoWords6() {
+    fun testRetainSubredditLink() {
         val comment = "foo /r/subreddit bar"
         Assert.assertEquals(
             comment.split(StringUtils.whitespaceRegex).toSet(),
+            comment.splitRedditCommentIntoWords().toSet()
+        )
+    }
+
+    @Test
+    fun testRetainUserLink() {
+        val comment = "foo /u/user bar"
+        Assert.assertEquals(
+            comment.split(StringUtils.whitespaceRegex).toSet(),
+            comment.splitRedditCommentIntoWords().toSet()
+        )
+    }
+
+    @Test
+    fun testPrependSubredditLinkWithSlash() {
+        val comment = "r/subreddit"
+        Assert.assertEquals(
+            setOf("/$comment"),
+            comment.splitRedditCommentIntoWords().toSet()
+        )
+    }
+
+    @Test
+    fun testPrependUserLinkWithSlash() {
+        val comment = "u/user"
+        Assert.assertEquals(
+            setOf("/$comment"),
+            comment.splitRedditCommentIntoWords().toSet()
+        )
+    }
+
+    @Test
+    fun testRemoveUrls() {
+        val comment = "foo https://stuff.io bar"
+        Assert.assertEquals(
+            setOf("foo", "bar"),
+            comment.splitRedditCommentIntoWords().toSet()
+        )
+    }
+
+    @Test
+    fun testRemoveUrls2() {
+        val comment = "foo http://stuff.io bar"
+        Assert.assertEquals(
+            setOf("foo", "bar"),
+            comment.splitRedditCommentIntoWords().toSet()
+        )
+    }
+
+    @Test
+    fun testRemoveUrls3() {
+        val comment = "foo file://stuff.io bar"
+        Assert.assertEquals(
+            setOf("foo", "bar"),
             comment.splitRedditCommentIntoWords().toSet()
         )
     }
