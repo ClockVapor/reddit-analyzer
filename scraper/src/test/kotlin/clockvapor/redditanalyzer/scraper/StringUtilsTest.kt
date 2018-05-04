@@ -127,6 +127,16 @@ class StringUtilsTest {
     }
 
     @Test
+    fun testStartingWith() {
+        Assert.assertEquals("hello world", "world".startingWith("hello "))
+    }
+
+    @Test
+    fun testStartingWith2() {
+        Assert.assertEquals("hello world", "hello world".startingWith("hello "))
+    }
+
+    @Test
     fun testSplitsWords() {
         val comment = "foo bar. hello, world!"
         Assert.assertEquals(setOf("foo", "bar", "hello", "world"), comment.splitRedditCommentIntoWords().toSet())
@@ -251,6 +261,60 @@ class StringUtilsTest {
         val comment = "foo file://stuff.io bar"
         Assert.assertEquals(
             setOf("foo", "bar"),
+            comment.splitRedditCommentIntoWords().toSet()
+        )
+    }
+
+    @Test
+    fun testRecognizeSpacedWords() {
+        val comment = "foo bar A E S T H E T I C hello world"
+        Assert.assertEquals(
+            setOf("foo", "bar", "a e s t h e t i c", "hello", "world"),
+            comment.splitRedditCommentIntoWords().toSet()
+        )
+    }
+
+    @Test
+    fun testRecognizeSpacedWords2() {
+        val comment = "A E S T H E T I C"
+        Assert.assertEquals(
+            setOf("a e s t h e t i c"),
+            comment.splitRedditCommentIntoWords().toSet()
+        )
+    }
+
+    @Test
+    fun testRecognizeSpacedWords3() {
+        val comment = "A E S T H E T I C Capitalized"
+        Assert.assertEquals(
+            setOf("a e s t h e t i c", "capitalized"),
+            comment.splitRedditCommentIntoWords().toSet()
+        )
+    }
+
+    @Test
+    fun testRecognizeSpacedWords4() {
+        val comment = "FOOBAR A E S T H E T I C"
+        Assert.assertEquals(
+            setOf("a e s t h e t i c", "foobar"),
+            comment.splitRedditCommentIntoWords().toSet()
+        )
+    }
+
+    @Test
+    fun testSingleQuotes() {
+        val comment = "foo 'hello world' bar"
+        Assert.assertEquals(
+            setOf("foo", "bar", "hello", "world"),
+            comment.splitRedditCommentIntoWords().toSet()
+        )
+    }
+
+    @Test
+    fun testSingleQuotes2() {
+        val comment = "foo 'hello' bar"
+        Assert.assertEquals(
+            setOf("foo", "bar", "hello"),
             comment.splitRedditCommentIntoWords().toSet()
         )
     }

@@ -10,6 +10,7 @@ object StringUtils {
     val userLinkRegex = Regex("/?u/\\w+")
     val numberWithCommasRegex = Regex("(?:\\d+,)+\\d+")
     val urlRegex = Regex("[a-zA-Z]+://\\S+")
+    val spacedWordRegex = Regex("\\b(?:[A-Z] +)+[A-Z]\\b")
 
     fun mergeWordMaps(a: Map<String, Int>, b: Map<String, Int>): MutableMap<String, Int> {
         val result = mutableMapOf<String, Int>()
@@ -23,33 +24,37 @@ object StringUtils {
             base.compute(word) { _, c -> c?.checkedPlus(count) ?: count }
         }
     }
-
-    fun getWordMap(words: Iterable<String>, mode: Scraper.Mode = Scraper.Mode.DEFAULT): Map<String, Int> {
-        val map = hashMapOf<String, Int>()
-        if (mode == Scraper.Mode.DEFAULT) {
-            for (word in words) {
-                map.compute(word) { _, count -> count?.checkedPlus(1) ?: 1 }
-            }
-        } else if (mode == Scraper.Mode.COMMENT) {
-            for (word in words) {
-                map.computeIfAbsent(word) { 1 }
-            }
-        }
-        return map
-    }
 }
 
-fun String.getWordMap() = StringUtils.getWordMap(split(StringUtils.whitespaceRegex))
+fun String.getWordMap() = split(StringUtils.whitespaceRegex).getWordMap()
 
-fun String.getRedditCommentWordMap(mode: Scraper.Mode) = StringUtils.getWordMap(splitRedditCommentIntoWords(), mode)
+fun Iterable<String>.getWordMap(mode: Scraper.Mode = Scraper.Mode.DEFAULT): Map<String, Int> {
+    val map = hashMapOf<String, Int>()
+    if (mode == Scraper.Mode.DEFAULT) {
+        for (word in this) {
+            map.compute(word) { _, count -> count?.checkedPlus(1) ?: 1 }
+        }
+    } else if (mode == Scraper.Mode.COMMENT) {
+        for (word in this) {
+            map.computeIfAbsent(word) { 1 }
+        }
+    }
+    return map
+}
 
-// TODO: pick up words like "A E S T H E T I C" (usually all caps)
+fun String.getRedditCommentWordMap(mode: Scraper.Mode) = splitRedditCommentIntoWords().getWordMap(mode)
+
+// TODO: tests for every replace() call
+/**
+ * Splits a reddit comment into its individual words. Word order is not preserved.
+ */
 fun String.splitRedditCommentIntoWords(): List<String> = (
     stripLinks()
         .replace(StringUtils.urlRegex, " ")
         .replace("“", "\"").replace("”", "\"").replace("‘", "'").replace("’", "'")
         .replace("&nbsp", "")
         .replace(StringUtils.dashRegex, "-")
+        .replace(StringUtils.spacedWordRegex, " ")
         .replace(StringUtils.subredditLinkRegex, " ")
         .replace(StringUtils.userLinkRegex, " ")
         .replace(StringUtils.numberWithCommasRegex, " ")
@@ -57,8 +62,9 @@ fun String.splitRedditCommentIntoWords(): List<String> = (
         .toLowerCase().trim().split(StringUtils.whitespaceRegex) +
         StringUtils.subredditLinkRegex.findAll(this).map { it.value.toLowerCase().startingWith("/") } +
         StringUtils.userLinkRegex.findAll(this).map { it.value.toLowerCase().startingWith("/") } +
-        StringUtils.numberWithCommasRegex.findAll(this).map { it.value }
-    ).toMutableList().filter(String::isNotBlank)
+        StringUtils.numberWithCommasRegex.findAll(this).map { it.value } +
+        StringUtils.spacedWordRegex.findAll(this).map { it.value.toLowerCase() }
+    ).toMutableList().filter(String::isNotBlank).map { it.removePrefix("'").removeSuffix("'") }
 
 fun String.stripLinks(): String {
     var startI = 0
