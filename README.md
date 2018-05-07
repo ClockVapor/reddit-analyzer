@@ -42,3 +42,21 @@ JSON file that lists each subreddit's most distinguishing words, as compared to 
 - **WEIGHT_EXPONENT**: Exponent to use in the following formula to give each word its "score":
 
 ![scoring formula](images/formula.png)
+
+This exponent governs the trade-off between giving high scores to words that are unique to each subreddit, and giving
+high scores to words that appear often in each subreddit. Values close to or less than 1 will place more weight on
+words being unique to a subreddit, while values greater than 1 will place more weight on words being used often in a
+subreddit. A value between 1 and 2 is a good balance that will give high scores to words that are both fairly
+unique and used fairly often in each subreddit.
+
+If `WEIGHT_EXPONENT = 1`, unique words will be given higher scores than words used frequently. If a subreddit has 500
+occurrences of the word "the" out of 5000 occurrences across all subreddits, the first term of the score for "the" will
+be `500/5000 = 0.1` (notice that the second term is constant for each subreddit). The same subreddit also has 20
+occurrences of the word "foo" out of 30 occurrences across all subreddits, making the first term of its score
+`20/30 = 0.66`. So, even though "the" is used more frequently than "foo", "foo" still gets a higher score because
+it is more unique.
+
+On the other hand, if `WEIGHT_EXPONENT = 2`, words used frequently will be given higher scores than unique words.
+Using the same subreddit and words as above, the first term of the score for the word "the" would be
+`(500^2)/5000 = 50`, and the first term of the score for the word "foo" would be `(20)^2/30 = 13.33`.
+So, even though "foo" is more unique than "the", "the" gets a higher score because it is used more frequently.
