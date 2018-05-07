@@ -55,7 +55,8 @@ object Scraper {
                         for (reply in rootNode.replies) {
                             stuff.add(subreddit, reply.subject, options.mode)
                         }
-                        println("${++numSubmissions} submissions processed in /r/$subreddit")
+                        numSubmissions++
+                        println("$numSubmissions submissions processed in /r/$subreddit")
                         if (numSubmissions >= options.submissionLimit) break@listing
                     }
                 }
