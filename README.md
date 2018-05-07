@@ -58,5 +58,5 @@ it is more unique.
 
 On the other hand, if `WEIGHT_EXPONENT = 2`, words used frequently will be given higher scores than unique words.
 Using the same subreddit and words as above, the first term of the score for the word "the" would be
-`(500^2)/5000 = 50`, and the first term of the score for the word "foo" would be `(20)^2/30 = 13.33`.
+`(500^2)/5000 = 50`, and the first term of the score for the word "foo" would be `(20^2)/30 = 13.33`.
 So, even though "foo" is more unique than "the", "the" gets a higher score because it is used more frequently.
